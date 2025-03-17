@@ -1,6 +1,3 @@
-# Note: this action will be published separate on the GitHub.
-# It's here only temporary for the development purposes.
-
 name: 'Fingerprint'
 description: 'Fingerprint the current native-related files'
 inputs:
