@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/action-ios.git"
+    "url": "git+https://github.com/callstackincubator/ios.git"
   },
   "keywords": [
     "github-actions",
@@ -18,9 +18,9 @@
     "ci"
   ],
   "bugs": {
-    "url": "https://github.com/your-username/action-ios/issues"
+    "url": "https://github.com/callstackincubator/ios/issues"
   },
-  "homepage": "https://github.com/your-username/action-ios#readme",
+  "homepage": "https://github.com/callstackincubator/ios#readme",
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
