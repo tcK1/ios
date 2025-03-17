@@ -212,7 +212,7 @@ runs:
       shell: bash
 
     - name: Re-sign IPA
-      if: ${{ steps.find-artifact.outputs.artifact-url && inputs.destination == 'device' && inputs.re-sign == 'true' }}
+      if: ${{ steps.find-artifact.outputs.artifact-url && inputs.destination == 'device' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
       run: |
         npx rnef sign:ios ${{ env.ARTIFACT_PATH }} \
           --build-jsbundle \
