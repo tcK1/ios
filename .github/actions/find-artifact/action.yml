@@ -7,6 +7,9 @@ inputs:
   re-sign:
     description: Re-sign the app bundle with new JS bundle
     required: false
+  pr-number:
+    description: The pull request number
+    required: false
   github-token:
     description: A GitHub Personal Access Token with write access to the project
     required: false
@@ -27,6 +30,9 @@ outputs:
   artifact-ids:
     description: 'All IDs of the artifacts matching the name'
     value: ${{ steps.find-artifact.outputs.artifact-ids }}
+  artifact-name:
+    description: 'The name of the artifact - will append the PR number if the artifact is re-signed'
+    value: ${{ steps.find-artifact.outputs.artifact-name }}
 runs:
   using: 'composite'
   steps:
@@ -41,5 +47,6 @@ runs:
         INPUT_RE_SIGN: ${{ inputs.re-sign }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_PR_NUMBER: ${{ inputs.pr-number }}
       run: node ${{ github.action_path }}/index.mjs
       shell: bash
