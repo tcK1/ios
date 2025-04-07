@@ -166,8 +166,8 @@ runs:
       run: |
         npx rnef build:ios \
           ${{ inputs.destination == 'device' && '--archive' || '' }} \
-          --scheme ${{ inputs.scheme }} \
-          --configuration ${{ inputs.configuration }} \
+          --scheme "${{ inputs.scheme }}" \
+          --configuration "${{ inputs.configuration }}" \
           --build-folder build \
           --destination ${{ inputs.destination }} \
           ${{ inputs.rnef-build-extra-params }}
