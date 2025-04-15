@@ -156,6 +156,7 @@ runs:
       if: ${{ !steps.find-artifact.outputs.artifact-url }}
       run: |
         JSON_OUTPUT=$(npx rnef config -p ios)
+        echo "$JSON_OUTPUT" | jq -r '.project'
         IOS_SOURCE_DIR=$(echo "$JSON_OUTPUT" | jq -r '.project.ios.sourceDir')
         echo "IOS_SOURCE_DIR=$IOS_SOURCE_DIR" >> $GITHUB_ENV
       shell: bash
