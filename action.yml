@@ -224,7 +224,6 @@ runs:
 
     # Find artifact URL again before uploading, as other concurrent workflows could upload the same artifact
     - name: Find artifact URL again before uploading
-      if: ${{ !steps.find-artifact.outputs.artifact-url }}
       id: find-artifact-after-build
       uses: callstackincubator/ios/.github/actions/find-artifact@v1
       with:
