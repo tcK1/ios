@@ -24,7 +24,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@rnef/config": "^0.4.0",
-    "@rnef/tools": "^0.4.0"
+    "@rnef/config": "^0.7.18",
+    "@rnef/tools": "^0.7.18"
   }
 }
