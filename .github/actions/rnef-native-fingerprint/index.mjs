@@ -14,7 +14,7 @@ async function run() {
   const dir = path.isAbsolute(workingDirectory)
     ? workingDirectory
     : path.join(process.cwd(), workingDirectory);
-  const config = await getConfig(dir);
+  const config = await getConfig(dir, []);
   const fingerprintOptions = config.getFingerprintOptions();
 
   const fingerprint = await nativeFingerprint(dir, {
