@@ -26,6 +26,10 @@ inputs:
   re-sign:
     description: Re-sign the app bundle with new JS bundle
     required: false
+  skip-sign:
+    description: Skip the signing proccess (used when siging is handled elsewhere)
+    required: false
+    default: false
   certificate-base64:
     description: '[Device Builds] Base64 encoded P12 file containing Apple certificate (incl. private key)'
     required: false
@@ -67,7 +71,7 @@ runs:
           exit 1
         fi
 
-        if [ "${{ inputs.destination }}" == "device" ]; then
+        if [ "${{ inputs.destination }}" == "device" ] && [ "${{ inputs.skip-sign }}" == "false" ]; then
           if [ -z "${{ inputs.certificate-base64 }}" ]; then
             echo "Input 'certificate-base64' is required for device builds."
             exit 1
@@ -122,7 +126,7 @@ runs:
       shell: bash
 
     - name: Setup Code Signing (device builds only)
-      if: ${{ inputs.re-sign == 'true' || (!steps.find-artifact.outputs.artifact-url && inputs.destination == 'device') }}
+      if: ${{ inputs.re-sign == 'true' || (!steps.find-artifact.outputs.artifact-url && inputs.destination == 'device' && inputs.skip-sign == 'false') }}
       run: |
         # Create temporary keychain
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
@@ -252,7 +256,7 @@ runs:
       shell: bash
 
     - name: Clean Up Code Signing (device builds only)
-      if: ${{ !steps.find-artifact-after-build.outputs.artifact-url && inputs.destination == 'device' }}
+      if: ${{ !steps.find-artifact-after-build.outputs.artifact-url && inputs.destination == 'device' && inputs.skip-sign == 'false' }}
       run: |
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
         security delete-keychain "$KEYCHAIN_PATH"
