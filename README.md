@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build iOS
-        uses: callstackincubator/ios@v1
+        uses: callstackincubator/ios@v2
         with:
           destination: 'simulator' # or 'device'
           scheme: 'YourScheme'

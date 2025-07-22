@@ -312,7 +312,7 @@ runs:
 
     - name: Post Build
       if: ${{ github.event_name == 'pull_request' && inputs.comment-bot == 'true' }}
-      uses: callstackincubator/ios/.github/actions/rnef-post-build@feat/remote-cache-command
+      uses: callstackincubator/ios/.github/actions/rnef-post-build@v2
       with:
         title: iOS ${{ inputs.configuration }} ${{ inputs.destination == 'simulator' && 'APP for simulators' || 'IPA for physical devices' }}
         artifact-url: ${{ steps.upload-artifact.outputs.artifact-url || env.ARTIFACT_URL }}
