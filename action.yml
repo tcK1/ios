@@ -24,7 +24,7 @@ inputs:
     description: Xcode configuration
     required: true
   re-sign:
-    description: Re-sign the app bundle with new JS bundle
+    description: Re-sign IPA with new JS bundle. No signing is done for APP bundle (destination == simulator).
     required: false
   certificate-base64:
     description: '[Device Builds] Base64 encoded P12 file containing Apple certificate (incl. private key)'
@@ -161,7 +161,7 @@ runs:
       shell: bash
 
     - name: Setup Code Signing (device builds only)
-      if: ${{ inputs.re-sign == 'true' || (!env.ARTIFACT_URL && inputs.destination == 'device') }}
+      if: ${{ inputs.re-sign == 'true' && inputs.destination == 'device' || (!env.ARTIFACT_URL && inputs.destination == 'device') }}
       run: |
         # Create temporary keychain
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
@@ -211,7 +211,7 @@ runs:
           --build-folder build \
           --destination ${{ inputs.destination }} \
           --verbose \
-          ${{ inputs.rnef-build-extra-params }} 
+          ${{ inputs.rnef-build-extra-params }}
       shell: bash
       working-directory: ${{ inputs.working-directory }}
 
@@ -243,6 +243,21 @@ runs:
         echo "ARTIFACT_PATH=$IPA_PATH" >> $GITHUB_ENV
       shell: bash
 
+    - name: Download and Unpack APP
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      run: |
+        DOWNLOAD_OUTPUT=$(npx rnef remote-cache download --name ${{ env.ARTIFACT_NAME }} --json)
+        APP_PATH=$(echo "$DOWNLOAD_OUTPUT" | jq -r '.path')
+        APP_DIR=$(dirname "$APP_PATH")
+        APP_BASENAME=$(basename "$APP_PATH")
+
+        tar -C "$APP_DIR" -xzf "$APP_PATH"
+        EXTRACTED_APP=$(find "$APP_DIR" -name "*.app" -type d | head -1)
+
+        echo "ARTIFACT_PATH=$APP_PATH" >> $GITHUB_ENV
+        echo "ARTIFACT_TAR_PATH=$EXTRACTED_APP" >> $GITHUB_ENV
+      shell: bash
+
     - name: Re-sign IPA
       if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
       run: |
@@ -251,6 +266,25 @@ runs:
           --identity ${{ env.IDENTITY }}
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+
+    - name: Re-bundle APP
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      run: |
+        npx rnef sign:ios ${{ env.ARTIFACT_TAR_PATH }} \
+          --build-jsbundle \
+          --app
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Update Artifact Name for re-signed builds
+      if: ${{ github.event_name == 'pull_request' && inputs.re-sign == 'true' }}
+      run: |
+        ARTIFACT_TRAITS="${{ inputs.destination }},${{ inputs.configuration }},${{ github.event.pull_request.number}}"
+        ARTIFACT_TRAITS_HYPHENATED=$(echo "$ARTIFACT_TRAITS" | tr ',' '-')
+        ARTIFACT_TRAITS_HYPHENATED_FINGERPRINT="${ARTIFACT_TRAITS_HYPHENATED}-${FINGERPRINT}"
+        echo "ARTIFACT_NAME=rnef-ios-${ARTIFACT_TRAITS_HYPHENATED_FINGERPRINT}" >> $GITHUB_ENV
+        echo "ARTIFACT_TRAITS=$ARTIFACT_TRAITS" >> $GITHUB_ENV
+      shell: bash
 
     # Find artifact URL again before uploading, as other concurrent workflows could upload the same artifact
     - name: Find artifact URL again before uploading
@@ -289,7 +323,7 @@ runs:
       shell: bash
 
     - name: Delete Old Re-Signed Artifacts
-      if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
       run: |
         npx rnef remote-cache delete --name ${{ env.ARTIFACT_NAME }} --all-but-latest --json
       shell: bash
