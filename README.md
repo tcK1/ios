@@ -25,10 +25,10 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build iOS
-        uses: callstackincubator/ios@v1
+        uses: callstackincubator/ios@v2 # replace with latest commit hash
         with:
           destination: 'simulator' # or 'device'
           scheme: 'YourScheme'
