@@ -336,7 +336,7 @@ runs:
       shell: bash
 
     - name: Clean Up Code Signing (device builds only)
-      if: ${{ !env.ARTIFACT_URL && inputs.destination == 'device' }}
+      if: ${{ !env.ARTIFACT_URL && inputs.destination == 'device' && inputs.custom-sign-script == '' }}
       run: |
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
         security delete-keychain "$KEYCHAIN_PATH"
