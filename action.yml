@@ -41,6 +41,9 @@ inputs:
   keychain-password:
     description: "[Device Builds] Password that will protect temporary keychain used for signing (can be a random string)"
     required: false
+  custom-sign-script:
+    description: "[Device Builds] Replace the action sign step with yours. Useful for migrations to the action"
+    required: false
   rnef-build-extra-params:
     description: 'Extra parameters to pass to "rnef build:ios"'
     required: false
@@ -67,7 +70,7 @@ runs:
           exit 1
         fi
 
-        if [ "${{ inputs.destination }}" == "device" ] && [ "${{ inputs.skip-sign }}" == "false" ]; then
+        if [ "${{ inputs.destination }}" == "device" ] && [ "${{ inputs.custom-sign-script }}" == "" ]; then
           if [ -z "${{ inputs.certificate-base64 }}" ]; then
             echo "Input 'certificate-base64' is required for device builds."
             exit 1
@@ -163,32 +166,36 @@ runs:
     - name: Setup Code Signing (device builds only)
       if: ${{ inputs.re-sign == 'true' && inputs.destination == 'device' || (!env.ARTIFACT_URL && inputs.destination == 'device') }}
       run: |
-        # Create temporary keychain
-        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        if [ "${{ inputs.custom-sign-script }}" == "" ]; then
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-        security create-keychain -p "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
-        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-        security unlock-keychain -p "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
+          security create-keychain -p "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
 
-        # Import certificate to keychain
-        CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          # Import certificate to keychain
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
 
-        echo -n "${{ inputs.certificate-base64 }}" | base64 --decode -o $CERTIFICATE_PATH
-        security import $CERTIFICATE_PATH -P "${{ inputs.certificate-password }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-        security set-key-partition-list -S apple-tool:,apple: -k "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
-        security list-keychain -d user -s $KEYCHAIN_PATH
+          echo -n "${{ inputs.certificate-base64 }}" | base64 --decode -o $CERTIFICATE_PATH
+          security import $CERTIFICATE_PATH -P "${{ inputs.certificate-password }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "${{ inputs.keychain-password }}" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
 
-        # Infer certificate identity
-        IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | grep -oE '([0-9A-F]{40})' | head -n 1)
-        echo "Certificate identity: $IDENTITY"
-        echo "IDENTITY=$IDENTITY" >> $GITHUB_ENV
+          # Infer certificate identity
+          IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | grep -oE '([0-9A-F]{40})' | head -n 1)
+          echo "Certificate identity: $IDENTITY"
+          echo "IDENTITY=$IDENTITY" >> $GITHUB_ENV
 
-        # Unpack provisioning profile
-        PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-        PROFILE_PATH="$PROFILE_DIR/${{ inputs.provisioning-profile-name }}.mobileprovision"
+          # Unpack provisioning profile
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE_PATH="$PROFILE_DIR/${{ inputs.provisioning-profile-name }}.mobileprovision"
 
-        mkdir -p "$PROFILE_DIR"
-        echo -n "${{ inputs.provisioning-profile-base64 }}" | base64 --decode -o "$PROFILE_PATH"
+          mkdir -p "$PROFILE_DIR"
+          echo -n "${{ inputs.provisioning-profile-base64 }}" | base64 --decode -o "$PROFILE_PATH"
+        else
+          ${{ inputs.custom-sign-script }}
+        fi
       shell: bash
 
     - name: Determine iOS sourceDir
