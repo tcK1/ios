@@ -243,7 +243,7 @@ runs:
       shell: bash
 
     - name: Download and Unpack IPA
-      if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' }}
       run: |
         DOWNLOAD_OUTPUT=$(npx rnef remote-cache download --name ${{ env.ARTIFACT_NAME }} --json)
         IPA_PATH=$(echo "$DOWNLOAD_OUTPUT" | jq -r '.path')
@@ -251,7 +251,7 @@ runs:
       shell: bash
 
     - name: Download and Unpack APP
-      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' }}
       run: |
         DOWNLOAD_OUTPUT=$(npx rnef remote-cache download --name ${{ env.ARTIFACT_NAME }} --json)
         APP_PATH=$(echo "$DOWNLOAD_OUTPUT" | jq -r '.path')
@@ -266,7 +266,7 @@ runs:
       shell: bash
 
     - name: Re-sign IPA
-      if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'device' && inputs.re-sign == 'true' }}
       run: |
         npx rnef sign:ios ${{ env.ARTIFACT_PATH }} \
           --build-jsbundle \
@@ -275,7 +275,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
 
     - name: Re-bundle APP
-      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.destination == 'simulator' && inputs.re-sign == 'true' }}
       run: |
         npx rnef sign:ios ${{ env.ARTIFACT_TAR_PATH }} \
           --build-jsbundle \
@@ -308,7 +308,7 @@ runs:
     # Special case for GitHub, as it doesn't support uploading through the API
     - name: Upload Artifact to GitHub
       id: upload-artifact
-      if: ${{ env.PROVIDER_NAME == 'GitHub' && (!env.ARTIFACT_URL || (inputs.re-sign == 'true' && github.event_name == 'pull_request')) }}
+      if: ${{ env.PROVIDER_NAME == 'GitHub' && (!env.ARTIFACT_URL || (inputs.re-sign == 'true')) }}
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: ${{ env.ARTIFACT_NAME }}
@@ -316,7 +316,7 @@ runs:
         if-no-files-found: error
 
     - name: Upload Artifact to Remote Cache for re-signed builds
-      if: ${{ env.PROVIDER_NAME != 'GitHub' && (inputs.re-sign == 'true' && github.event_name == 'pull_request') }}
+      if: ${{ env.PROVIDER_NAME != 'GitHub' && (inputs.re-sign == 'true') }}
       run: |
         OUTPUT=$(npx rnef remote-cache upload --name ${{ env.ARTIFACT_NAME }} --binary-path ${{ env.ARTIFACT_PATH }} --json --verbose)
         echo "ARTIFACT_URL=$(echo "$OUTPUT" | jq -r '.url')" >> $GITHUB_ENV
@@ -330,7 +330,7 @@ runs:
       shell: bash
 
     - name: Delete Old Re-Signed Artifacts
-      if: ${{ env.ARTIFACT_URL && inputs.re-sign == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ env.ARTIFACT_URL && inputs.re-sign == 'true' }}
       run: |
         npx rnef remote-cache delete --name ${{ env.ARTIFACT_NAME }} --all-but-latest --json
       shell: bash
