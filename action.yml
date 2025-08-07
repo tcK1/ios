@@ -210,7 +210,6 @@ runs:
           --configuration "${{ inputs.configuration }}" \
           --build-folder build \
           --destination ${{ inputs.destination }} \
-          --verbose \
           ${{ inputs.rnef-build-extra-params }}
       shell: bash
       working-directory: ${{ inputs.working-directory }}
